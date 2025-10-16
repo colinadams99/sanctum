@@ -24,6 +24,9 @@ class SanctumAI:
 
         self.prompt_tmpl = DEFAULT_PROMPT_PATH.read_text(encoding="utf-8")
 
+        # setting up the persona
+        self.persona = (Path(__file__).resolve().parents[1] / "prompts" / "persona.txt").read_text()
+
     def _format_user_data(self, dd: dict) -> str:
         # make a compact, readable text block for the prompt
         parts = []
@@ -38,7 +41,9 @@ class SanctumAI:
         # validate & format
         dd = InsightInput(**user_data).model_dump()
         user_blob = self._format_user_data(dd)
-        prompt = self.prompt_tmpl.replace("{{USER_DATA}}", user_blob)
+        # prompt + persona
+        prompt = self.persona + "\n\n" + self.prompt_tmpl.replace("{{USER_DATA}}", user_blob)
+
 
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
         out = self.model.generate(
