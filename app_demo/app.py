@@ -1,5 +1,10 @@
 import json, streamlit as st
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parents[1]))  # add project root to PYTHONPATH
+
 from sdk.core import SanctumAI
+
 
 st.title("Sanctum (local) – Private Wellness Insight")
 st.caption("All on-device • No cloud • Demo")
