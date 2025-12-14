@@ -1,11 +1,5 @@
-You will receive:
-1) The type of document.
-2) Optional high-level context.
-3) The raw text (or extracted text) of the document.
-4) An explicit task.
-
 Document type: {{DOC_TYPE}}
-Context (may be empty): {{CONTEXT}}
+Context: {{CONTEXT}}
 
 Task:
 {{TASK}}
@@ -13,8 +7,4 @@ Task:
 Document text:
 {{DOC_TEXT}}
 
-Please respond with:
-- A concise, bulleted summary first (3–8 bullets).
-- A short paragraph explaining the implications in plain language.
-- If the user asked a specific question, answer it last under a heading "Q&A".
-- Do not provide investment advice or recommendations. Do not speculate beyond the text.
+ASSISTANT:

@@ -11,8 +11,10 @@ def load_pdf_text(path: str | Path, max_chars: Optional[int] = 20000) -> str:
     path = Path(path)
     reader = PdfReader(str(path))
     pages = []
+
+    # loops through pages, grabs text, & appends
     for page in reader.pages:
-        txt = page.extract_text() or ""
+        txt = page.extract_text() or ''
         pages.append(txt)
 
     full = ('\n\n'.join(pages))
