@@ -1,8 +1,12 @@
 from pathlib import Path
 import json
 from pydantic import BaseModel
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
+
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+
 
 
 # sets  phi 3 model and sets  prompt paths
@@ -22,12 +26,26 @@ class InsightInput(BaseModel):
 
 class SanctumAI:
     def __init__(self, model_name: str = DEFAULT_MODEL, load_in_4bit: bool = True):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast = True)
-        kwargs = {'device_map': 'auto'}
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            use_fast = True,
+        )
 
-        if load_in_4bit:
-            kwargs.update(dict(load_in_4bit = True, torch_dtype = torch.float16))
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
+        quant_config = BitsAndBytesConfig(
+            load_in_4bit = True,
+            bnb_4bit_quant_type = 'nf4',
+            bnb_4bit_use_double_quant = True,
+            bnb_4bit_compute_dtype = torch.float16,
+        )
+
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map = {'': 0},  # forces the entire model onto GPU, change to auto instead if there may be no gpu (i.e. customer)
+            quantization_config = quant_config,
+        )
+
+        self.model.eval()
+        torch.set_float32_matmul_precision("high")
 
         self.prompt_tmpl = DEFAULT_PROMPT_PATH.read_text(encoding = 'utf-8')
 
@@ -51,6 +69,15 @@ class SanctumAI:
                 'Document type: {{DOC_TYPE}}\nTask: {{TASK}}\n\nDocument text:\n{{DOC_TEXT}}\n'
             )
 
+        # ============= debugging here to see if gpu is being used effectively ================
+        try:
+            p = next(self.model.parameters())
+            print('[SanctumAI] first param device:', p.device)
+        except StopIteration:
+            print('[SanctumAI] model has no parameters?')
+
+        print('[SanctumAI] hf_device_map:', getattr(self.model, 'hf_device_map', None))
+
     # fxn to format user data
     def _format_user_data(self, dd: dict) -> str:
         # makes the text readable for the prompt
@@ -61,6 +88,7 @@ class SanctumAI:
                 continue
             parts.append(f'{k}: {v}')
         return '\n'.join(parts)
+
 
     @torch.inference_mode()
     def generate_insight(self, user_data: dict, max_new_tokens: int = 140) -> str:
@@ -76,14 +104,13 @@ class SanctumAI:
                 + '\nASSISTANT:\n'
         )
 
-        inputs = self.tokenizer(prompt, return_tensors = 'pt').to(self.model.device)
+        inputs = self.tokenizer(prompt, return_tensors = 'pt').to('cuda:0')
+
 
         out = self.model.generate(
             **inputs,
             max_new_tokens = max_new_tokens,
-            do_sample = True,
-            temperature = 0.7,
-            top_p = 0.9,
+            do_sample = False,
             eos_token_id = self.tokenizer.eos_token_id,
         )
 
@@ -113,7 +140,7 @@ class SanctumAI:
             doc_type: str = 'other',
             task: str = 'Summarize the key terms and structure for a portfolio finance analyst.',
             context: str | None = None,
-            max_new_tokens: int = 200,
+            max_new_tokens: int = 120,
             temperature: float = 0.4,
             top_p: float = 0.9,
             do_sample: bool = True,
@@ -124,6 +151,8 @@ class SanctumAI:
             doc_text = doc_text,
             context = context
         )
+
+
 
         toks = self.tokenizer(prompt, return_tensors = 'pt').to(self.model.device)
         out = self.model.generate(

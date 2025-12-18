@@ -14,7 +14,7 @@ from sdk.retrieval import chunk_text, build_tfidf_index, retrieve_top_k
 # page configureation
 st.set_page_config(
     page_title = 'Sanctum — Portfolio Finance Doc Assistant',
-    page_icon = '🛡️', # sorry i used ai for this icon part lmaooo
+    page_icon = 'S',
     layout = 'wide',
 )
 
@@ -79,7 +79,7 @@ st.markdown(
       }
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html = True,
 )
 
 # ---------- header ----------
@@ -117,7 +117,7 @@ with st.sidebar:
     st.markdown('### Controls')
     st.caption('Configure analysis settings and input type.')
 
-    mode = st.radio("Input", ["Paste text", "Upload PDF"], horizontal=False)
+    mode = st.radio('Input', ['Paste text', 'Upload PDF'], horizontal = False)
 
     doc_type = st.selectbox(
         'Document type',
@@ -143,9 +143,9 @@ with col_left:
     doc_text = ''
     if mode == 'Paste text':
         doc_text = st.text_area(
-            "Paste document text",
+            'Paste document text',
             height = 320,
-            placeholder="Paste term sheet / credit agreement / LPA excerpt…",
+            placeholder = 'Paste term sheet / credit agreement / LPA excerpt…',
         )
     else:
         pdf_file = st.file_uploader('Upload PDF', type = ['pdf'])
