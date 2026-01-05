@@ -66,7 +66,11 @@ class SanctumAI:
 
         else:
             self.finance_task_tmpl = (
-                'Document type: {{DOC_TYPE}}\nTask: {{TASK}}\n\nDocument text:\n{{DOC_TEXT}}\n'
+                'Document type: {{DOC_TYPE}}\n'
+                'Context: {{CONTEXT}}\n'
+                'Task: {{TASK}}\n\n'
+                'Document text:\n{{DOC_TEXT}}\n\n'
+                'ASSISTANT:\n'
             )
 
         # ============= debugging here to see if gpu is being used effectively ================
@@ -131,7 +135,13 @@ class SanctumAI:
         prompt = prompt.replace('{{TASK}}', task)
         prompt = prompt.replace('{{CONTEXT}}', ctx)
         prompt = prompt.replace('{{DOC_TEXT}}', doc_text)
-        return self.finance_persona +'\n\n' + prompt
+        # returns the prompt but also treis to keep the output concise and following the requested format by the user.
+        return (
+                self.finance_persona
+                + '\n\n'
+                + prompt
+                + '\n\nIMPORTANT: Keep the answer concise and stop after completing the requested format.'
+        )
 
     @torch.inference_mode()
     def analyze_finance_doc(

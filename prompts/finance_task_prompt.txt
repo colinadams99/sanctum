@@ -1,8 +1,12 @@
+You will receive:
+- Document type
+- Optional context
+- Task
+- Document text
+
 Document type: {{DOC_TYPE}}
 Context: {{CONTEXT}}
-
-Task:
-{{TASK}}
+Task: {{TASK}}
 
 Document text:
 {{DOC_TEXT}}
