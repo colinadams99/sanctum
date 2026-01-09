@@ -15,9 +15,22 @@ from scipy.sparse import csr_matrix
 
 def _clean(s: str) -> str:
     s = s.replace('\r', '\n')
-    s = re.sub(r'[ \t]+', " ", s)
+
+    # fixes whiespace
+    s = s.replace('\u00a0', ' ')
+    s = re.sub(r'[ \t]+', ' ', s)
+
+    # fixes letter by letter spacing issue
+    s = re.sub(r'(?<=\b[A-Za-z])\s(?=[A-Za-z]\b)', '', s)
+
+    # joins broken numbers
+    s = re.sub(r'(\d)\s*,\s*(\d)', r'\1,\2', s)
+
+    # collapses unneeded new lines
     s = re.sub(r'\n{3,}', '\n\n', s)
+
     return s.strip()
+
 
 
 def chunk_text(text: str, chunk_size: int = 1200, overlap: int = 200) -> List[str]:

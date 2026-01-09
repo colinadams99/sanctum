@@ -18,6 +18,9 @@ st.set_page_config(
     layout='wide',
 )
 
+st.session_state.setdefault('warmed', False)
+
+
 def sanctum_mark_svg(size: int = 22) -> str:
     # Minimal, geometric 'S' mark in a rounded square (non-AI, clean, brandable)
     return f'''
@@ -140,6 +143,19 @@ def get_ai() -> SanctumAI:
 
 ai = get_ai()
 
+# warms up the cuda kernels
+if not st.session_state['warmed']:
+    with st.spinner('Warming up model...'):
+        _ = ai.analyze_finance_doc(
+            doc_text='Test.',
+            doc_type='other',
+            task='Respond with OK.',
+            context=None,
+            max_new_tokens=8,
+        )
+    st.session_state['warmed'] = True
+
+
 # ---------- sidebar controls ----------
 with st.sidebar:
     st.markdown('### Controls')
@@ -227,6 +243,8 @@ if run:
 
         # Retrieval
         with st.spinner('Retrieving relevant sections...'):
+
+            doc_text = doc_text.replace('\u00a0', ' ')
             chunks = chunk_text(doc_text, chunk_size=chunk_size, overlap=overlap)
 
             if not chunks:
