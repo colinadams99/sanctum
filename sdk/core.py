@@ -3,6 +3,7 @@ import json
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
+import streamlit as st
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
@@ -45,7 +46,7 @@ class SanctumAI:
         )
 
         self.model.eval()
-        torch.set_float32_matmul_precision("high")
+        torch.set_float32_matmul_precision('high')
 
         self.prompt_tmpl = DEFAULT_PROMPT_PATH.read_text(encoding = 'utf-8')
 
@@ -94,7 +95,7 @@ class SanctumAI:
         return '\n'.join(parts)
 
 
-    @torch.inference_mode()
+    @torch.inference_mode() # disables gradient calculations for inference
     def generate_insight(self, user_data: dict, max_new_tokens: int = 140) -> str:
         # validate & format
         dd = InsightInput(**user_data).model_dump()
@@ -143,7 +144,7 @@ class SanctumAI:
                 + '\n\nIMPORTANT: Keep the answer concise and stop after completing the requested format.'
         )
 
-    @torch.inference_mode()
+    @torch.inference_mode() # disables gradient calculations for inference
     def analyze_finance_doc(
             self,
             doc_text: str,
@@ -176,5 +177,10 @@ class SanctumAI:
 
         gen = out[0][toks['input_ids'].shape[-1]:]
         return self.tokenizer.decode(gen, skip_special_tokens = True).strip()
+
+@st.cache_resource
+def get_sanctum_ai(model_name: str = DEFAULT_MODEL):
+    """Load model once and cache it"""
+    return SanctumAI(model_name=model_name)
 
 
